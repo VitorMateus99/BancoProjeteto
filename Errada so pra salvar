@@ -1,0 +1,215 @@
+package com.example.contaapplication;
+
+import android.accessibilityservice.GestureDescription;
+import android.annotation.SuppressLint;
+import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.View;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.Spinner;
+import android.widget.Toast;
+
+import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.WindowDecorActionBar;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+
+public class EnviarPixActivity extends AppCompatActivity {
+
+
+    private Spinner spinnerPix;
+    private boolean isEditing = false;
+    private RepositorioPix repositorioPix;
+    private RepositorioConta repositorioConta;
+    private RepositorioTransacoes repositorioTransacoes;
+
+    @SuppressLint("MissingInflatedId")
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_enviar_pix);
+        setTitle("Transferir Pix");
+
+
+
+        spinnerPix = findViewById(R.id.spinnerDoPix);
+
+        configuraçãoSpinner();
+        setupTextWatcher();
+
+        setTitle("Cadastre sua chave");
+
+    }
+
+    // Método para configurar o spinner
+    public void configuraçãoSpinner() {
+        ArrayAdapter<CharSequence> arrayAdapter = ArrayAdapter.createFromResource(this, R.array.spinnerPix, android.R.layout.simple_spinner_item);
+        arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerPix.setAdapter(arrayAdapter);
+
+
+    }
+
+    // Método para configurar o spinner
+    public void configuraçãoSpinner() {
+        ArrayAdapter<CharSequence> arrayAdapter = ArrayAdapter.createFromResource(this, R.array.spinnerPix, android.R.layout.simple_spinner_item);
+        arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerPix.setAdapter(arrayAdapter);
+    }
+
+    // Método para aplicar a máscara enquanto o usuário digita
+    private void setupTextWatcher() {
+        valorPix.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!isEditing) {
+                    mascaraspinner(); // Chama o método para aplicar a máscara
+                }
+            }
+
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // Não é necessário implementar
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                // Não é necessário implementar
+            }
+        });
+    }
+
+    public void enviarPix (View view)
+    {
+        EditText editTextChavePix = findViewById(R.id.editTextChavePix);
+        EditText editTextValorPix = findViewById(R.id.editTextValorPix);
+
+        String chavePix = editTextChavePix.getText().toString();
+        String valorPix = editTextValorPix.getText().toString();
+
+        Float saldoAtual = repositorioConta.obterSaldo();
+
+        if (valorPix > saldoAtual) {
+
+        }
+
+
+
+        if (validarCampos(chavePix, valorPix)) {
+            Toast.makeText(this, "Pix enviado com sucesso!", Toast.LENGTH_SHORT).show();
+
+
+            novoSaldo -= valor; // Atualiza o saldo
+            conta.setSaldo(novoSaldo); // Define o novo saldo
+
+            repositorioConta.atualizarSaldo(conta); // Atualiza o saldo na base de dados
+
+            Transacoes transacoes = new Transacoes("RETIRADO",valor);
+            repositorioTransacoes.adicionarTransacao(transacoes); // Adiciona a transação de retirada
+
+        }
+
+
+    }
+
+
+
+
+}
+
+
+public boolean validarCampos(String chavePix, String valorPix)
+{
+    if( chavePix.isEmpty())
+    {
+        Toast.makeText(this, "Erro: Informe a Chave Pix",
+                Toast.LENGTH_SHORT).show();
+        return false;
+    }
+
+    if (valorPix.isEmpty())
+    {
+        Toast.makeText(this, "Erro: Informe o Valor do Pix",
+                Toast.LENGTH_SHORT).show();
+        return false;
+    }
+
+    try {
+        Float valor = Float.parseFloat(valorPix);
+        if( valor <= 0)
+        {
+            Toast.makeText(this, "Erro: Valor deve ser maior que zero",
+                    Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+    } catch (NumberFormatException  e) {
+        Toast.makeText(this, "Erro: Valor informado não e valido",
+                Toast.LENGTH_SHORT).show();
+    }
+
+    return true;
+    //Se passou em todas as validaçoes retorna verdadeiro
+
+}
+
+
+
+public void mascaraspinner() {
+    String apenasNumeros;
+    StringBuilder formatado;
+    if (spinnerPix.getSelectedItem() != null) {
+        String input = valorPix.getText().toString();
+        apenasNumeros = input.replaceAll("\\D", "");
+        formatado = new StringBuilder();
+
+        if (spinnerPix.getSelectedItem().equals("CPF")) {
+            formatarCPF(apenasNumeros, formatado);
+
+        } else if (spinnerPix.getSelectedItem().equals("CELULAR")) {
+            formatarCelular(apenasNumeros, formatado);
+
+        }
+
+        // Apenas atualiza o texto se formatado não estiver vazio
+        if (formatado.length() > 0) {
+            isEditing = true; // Sinaliza que estamos editando
+            valorPix.setText(formatado.toString());
+            valorPix.setSelection(formatado.length()); // Coloca o cursor no final
+            isEditing = false; // Reseta o sinalizador
+        }
+    }
+
+    private void formatarCPF(String apenasNumeros, StringBuilder formatado) {
+
+        for (int i = 0; i < Math.min(apenasNumeros.length(), 11); i++) {
+            if (i == 3 || i == 6) {
+                formatado.append('.');
+            } else if (i == 9) {
+                formatado.append('-');
+            }
+            formatado.append(apenasNumeros.charAt(i));
+        }
+    }
+
+    private void formatarCelular(String apenasNumeros, StringBuilder formatado) {
+
+
+        for (int i = 0; i < Math.min(apenasNumeros.length(), 11); i++) {
+            if (i == 0) {
+                formatado.append("(");
+            } else if (i == 2) {
+                formatado.append(") ");
+            } else if (i == 7) {
+                formatado.append("-");
+            }
+            formatado.append(apenasNumeros.charAt(i));
+        }
+    }
+
+}
+}
