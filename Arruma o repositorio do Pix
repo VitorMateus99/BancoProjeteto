@@ -1,0 +1,12 @@
+ public boolean possuiChavePixCadastrada() {
+        String sql = "SELECT COUNT(*) FROM pix";
+        Cursor cursor = getReadableDatabase().rawQuery(sql, null);
+        boolean possui = false;
+
+        if (cursor.moveToFirst()) {
+            possui = cursor.getInt(0) > 0;
+        }
+
+        cursor.close();
+        return possui;
+    }
